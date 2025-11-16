@@ -1,0 +1,27 @@
+# Archivos de compilación
+build/
+cmake-build-*/
+*.o
+*.obj
+*.exe
+*.out
+*.app
+
+# Archivos de datos generados
+data/
+*.dat
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Temporales
+*.tmp
+*.log
