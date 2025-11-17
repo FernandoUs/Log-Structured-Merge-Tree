@@ -85,40 +85,12 @@ private:
      * SELECT COUNT(*) FROM table [WHERE condition]
      */
     std::shared_ptr<ASTNode> parseSelect() {
-        auto node = std::make_shared<ASTNode>(ASTNodeType::SELECT_STMT);
-        
-        expect(TokenType::SELECT, "Expected SELECT");
-        
-        // Parse COUNT(*)
-        if (peek().type == TokenType::COUNT) {
-            advance();
-            expect(TokenType::LPAREN);
-            expect(TokenType::STAR);
-            expect(TokenType::RPAREN);
-            
-            auto countNode = std::make_shared<ASTNode>(ASTNodeType::COUNT_EXPR, "COUNT(*)");
-            node->addChild(countNode);
-        } else if (peek().type == TokenType::STAR) {
-            advance();
-            auto starNode = std::make_shared<ASTNode>(ASTNodeType::COLUMN_LIST, "*");
-            node->addChild(starNode);
-        }
-        
-        // FROM table
-        expect(TokenType::FROM, "Expected FROM");
-        if (peek().type == TokenType::IDENTIFIER) {
-            auto tableNode = std::make_shared<ASTNode>(ASTNodeType::IDENTIFIER, peek().value);
-            node->addChild(tableNode);
-            advance();
-        }
-        
-        // Optional WHERE clause
-        if (peek().type == TokenType::WHERE) {
-            auto whereNode = parseWhere();
-            node->addChild(whereNode);
-        }
-        
-        return node;
+        // TODO: Implementar parser de SELECT
+        // 1. expect(SELECT)
+        // 2. Parsear COUNT(*) o *
+        // 3. expect(FROM), leer tabla
+        // 4. Parsear WHERE opcional con parseWhere()
+        return std::make_shared<ASTNode>(ASTNodeType::SELECT_STMT);
     }
     
     /**

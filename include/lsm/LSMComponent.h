@@ -44,18 +44,11 @@ public:
      * @brief Construye el componente desde registros ordenados
      */
     void build(std::vector<SpatialRecord<T>> records) {
-        recordCount = records.size();
-        
-        if (records.empty()) {
-            totalMBR = MBR(rtree.getTotalMBR().dimensions());
-            return;
-        }
-        
-        // Construir R-tree con bulk-loading
-        rtree.build(records);
-        
-        // Actualizar MBR total
-        totalMBR = rtree.getTotalMBR();
+        // TODO: Construir componente LSM
+        // 1. Actualizar recordCount
+        // 2. Construir R-tree usando rtree.build()
+        // 3. Actualizar totalMBR desde rtree.getTotalMBR()
+        recordCount = 0;
     }
     
     /**
@@ -63,13 +56,10 @@ public:
      * Primero filtra por MBR, luego busca en R-tree
      */
     std::vector<SpatialRecord<T>> rangeSearch(const MBR& queryBox) const {
-        // Filtrado MBR - optimización clave del paper
-        if (!totalMBR.intersects(queryBox)) {
-            return std::vector<SpatialRecord<T>>();
-        }
-        
-        // Buscar en R-tree local
-        return rtree.rangeSearch(queryBox);
+        // TODO: Implementar range search con filtrado MBR
+        // 1. Verificar totalMBR.intersects(queryBox) - si no, retornar vacío
+        // 2. Si intersecta, buscar en rtree.rangeSearch(queryBox)
+        return {};
     }
     
     // Getters
@@ -83,36 +73,22 @@ public:
      * @brief Serializa el componente a disco
      */
     bool saveToDisk(const std::string& directory = "./data") const {
-        std::string fullPath = directory + "/" + filename;
-        std::ofstream ofs(fullPath, std::ios::binary);
-        if (!ofs) return false;
-        
-        // Formato simple: metadata + registros
-        ofs.write(reinterpret_cast<const char*>(&level), sizeof(level));
-        ofs.write(reinterpret_cast<const char*>(&timestamp), sizeof(timestamp));
-        ofs.write(reinterpret_cast<const char*>(&recordCount), sizeof(recordCount));
-        
-        // TODO: Serializar R-tree y MBR
-        
-        ofs.close();
-        return true;
+        // TODO: Implementar serialización
+        // 1. Crear archivo binario en directory/filename
+        // 2. Escribir metadata (level, timestamp, recordCount)
+        // 3. Serializar R-tree y MBR
+        return false;
     }
     
     /**
      * @brief Carga el componente desde disco
      */
     bool loadFromDisk(const std::string& filepath) {
-        std::ifstream ifs(filepath, std::ios::binary);
-        if (!ifs) return false;
-        
-        ifs.read(reinterpret_cast<char*>(&level), sizeof(level));
-        ifs.read(reinterpret_cast<char*>(&timestamp), sizeof(timestamp));
-        ifs.read(reinterpret_cast<char*>(&recordCount), sizeof(recordCount));
-        
-        // TODO: Deserializar R-tree y MBR
-        
-        ifs.close();
-        return true;
+        // TODO: Implementar deserialización
+        // 1. Abrir archivo binario
+        // 2. Leer metadata
+        // 3. Deserializar R-tree y MBR
+        return false;
     }
 };
 

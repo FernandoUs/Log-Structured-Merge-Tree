@@ -34,69 +34,47 @@ public:
      * @brief Inserta un registro en la MemTable
      */
     bool insert(const SpatialRecord<T>& record) {
-        std::lock_guard<std::mutex> lock(mutex);
-        
-        // Estimar tamaño (simplificado)
-        size_t recordSize = sizeof(record) + record.point.dimensions() * sizeof(double);
-        
-        if (currentSize + recordSize > maxSize) {
-            return false;  // MemTable llena, necesita flush
-        }
-        
-        data[record.point] = record;
-        currentSize += recordSize;
-        return true;
+        // TODO: Implementar inserción
+        // 1. Estimar tamaño del record
+        // 2. Verificar si cabe (currentSize + recordSize <= maxSize)
+        // 3. Si no cabe, retornar false
+        // 4. Insertar en map data[record.point] = record
+        // 5. Actualizar currentSize
+        return false;
     }
     
     /**
      * @brief Marca un registro como borrado (Tombstone)
      */
     bool remove(const Point& point) {
-        std::lock_guard<std::mutex> lock(mutex);
-        
-        SpatialRecord<T> tombstone(point, T(), true);
-        data[point] = tombstone;
-        currentSize += sizeof(tombstone);
-        
-        return true;
+        // TODO: Implementar remoción
+        // Crear SpatialRecord con isTombstone = true
+        // Insertar en map
+        return false;
     }
     
     /**
      * @brief Búsqueda en MemTable
      */
     std::vector<SpatialRecord<T>> rangeSearch(const MBR& queryBox) const {
-        std::lock_guard<std::mutex> lock(mutex);
-        
-        std::vector<SpatialRecord<T>> results;
-        for (const auto& [point, record] : data) {
-            if (!record.isTombstone && queryBox.contains(point)) {
-                results.push_back(record);
-            }
-        }
-        return results;
+        // TODO: Implementar búsqueda en MemTable
+        // Iterar sobre data, agregar records que queryBox.contains(point) y no son tombstone
+        return {};
     }
     
     /**
      * @brief Obtiene todos los registros (para flush)
      */
     std::vector<SpatialRecord<T>> getAllRecords() const {
-        std::lock_guard<std::mutex> lock(mutex);
-        
-        std::vector<SpatialRecord<T>> records;
-        records.reserve(data.size());
-        for (const auto& [point, record] : data) {
-            records.push_back(record);
-        }
-        return records;
+        // TODO: Copiar todos los records de data a un vector
+        return {};
     }
     
     /**
      * @brief Limpia la MemTable después del flush
      */
     void clear() {
-        std::lock_guard<std::mutex> lock(mutex);
-        data.clear();
-        currentSize = 0;
+        // TODO: Limpiar data y resetear currentSize
     }
     
     // Getters
@@ -165,20 +143,13 @@ public:
      * @brief Inserta un registro espacial
      */
     bool insert(const Point& point, const T& data) {
-        SpatialRecord<T> record(point, data, false);
-        
-        if (!memTable.insert(record)) {
-            // MemTable llena - ejecutar flush
-            flush();
-            
-            // Reintentar inserción
-            if (!memTable.insert(record)) {
-                return false;
-            }
-        }
-        
-        metrics.totalWrites++;
-        return true;
+        // TODO: Implementar inserción en LSM-tree
+        // 1. Crear SpatialRecord
+        // 2. Intentar insertar en memTable
+        // 3. Si memTable.insert() retorna false (llena), ejecutar flush()
+        // 4. Reintentar inserción
+        // 5. Actualizar metrics.totalWrites
+        return false;
     }
     
     /**
@@ -186,9 +157,9 @@ public:
      * Referencia: Antimatter records del paper
      */
     bool remove(const Point& point) {
-        memTable.remove(point);
-        metrics.totalWrites++;
-        return true;
+        // TODO: Llamar memTable.remove(point)
+        // Actualizar metrics.totalWrites
+        return false;
     }
     
     /**
@@ -196,30 +167,14 @@ public:
      * Referencia: Operación Flush del paper
      */
     void flush() {
-        if (memTable.isEmpty()) return;
-        
-        std::lock_guard<std::mutex> lock(treeMutex);
-        
-        // Obtener registros de MemTable
-        auto records = memTable.getAllRecords();
-        
-        // Crear nuevo componente de disco
-        auto component = std::make_shared<LSMComponent<T>>(0, dimensions);
-        component->build(records);
-        
-        // Agregar a componentes de disco
-        diskComponents.push_back(component);
-        
-        // Limpiar MemTable
-        memTable.clear();
-        
-        // Incrementar write amplification
-        metrics.writeAmplification += records.size();
-        
-        // Verificar si necesitamos merge
-        if (diskComponents.size() >= maxComponentsBeforeMerge) {
-            // TODO: Trigger merge policy
-        }
+        // TODO: Implementar flush
+        // 1. Verificar si memTable está vacía
+        // 2. Obtener records con memTable.getAllRecords()
+        // 3. Crear LSMComponent, llamar component->build(records)
+        // 4. Agregar component a diskComponents
+        // 5. Limpiar memTable con memTable.clear()
+        // 6. Actualizar metrics.writeAmplification
+        // 7. Verificar si necesita merge (diskComponents.size >= maxComponentsBeforeMerge)
     }
     
     /**
@@ -227,68 +182,31 @@ public:
      * Referencia: SPATIALSEARCH (Algoritmo 3) del paper
      */
     std::vector<SpatialRecord<T>> spatialRangeQuery(const MBR& queryBox) {
-        auto startTime = std::chrono::high_resolution_clock::now();
-        
-        std::vector<SpatialRecord<T>> results;
-        size_t componentsScanned = 0;
-        
-        // 1. Buscar en MemTable
-        auto memResults = memTable.rangeSearch(queryBox);
-        results.insert(results.end(), memResults.begin(), memResults.end());
-        
-        // 2. Buscar en componentes de disco (con filtrado MBR)
-        std::lock_guard<std::mutex> lock(treeMutex);
-        for (const auto& component : diskComponents) {
-            auto compResults = component->rangeSearch(queryBox);
-            results.insert(results.end(), compResults.begin(), compResults.end());
-            componentsScanned++;
-        }
-        
-        // 3. Eliminar duplicados y tombstones
-        removeDuplicatesAndTombstones(results);
-        
-        // Actualizar métricas
-        metrics.totalReads++;
-        metrics.readAmplification += componentsScanned;
-        
-        auto endTime = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-        metrics.avgQueryLatency = (metrics.avgQueryLatency * (metrics.totalReads - 1) + duration.count()) / metrics.totalReads;
-        
-        return results;
+        // TODO: Implementar SPATIALSEARCH
+        // 1. Buscar en memTable.rangeSearch(queryBox)
+        // 2. Iterar diskComponents, llamar component->rangeSearch(queryBox)
+        // 3. Combinar resultados
+        // 4. Eliminar duplicados/tombstones con removeDuplicatesAndTombstones()
+        // 5. Actualizar métricas (totalReads, readAmplification, avgQueryLatency)
+        return {};
     }
     
     /**
      * @brief Búsqueda de punto exacto
      */
     std::vector<SpatialRecord<T>> pointQuery(const Point& point) {
-        // Crear MBR pequeño alrededor del punto
-        MBR queryBox(point, point);
-        return spatialRangeQuery(queryBox);
+        // TODO: Crear MBR pequeño alrededor del punto
+        // Llamar spatialRangeQuery(queryBox)
+        return {};
     }
     
     /**
      * @brief Elimina duplicados y registros tombstone
      */
     void removeDuplicatesAndTombstones(std::vector<SpatialRecord<T>>& results) const {
-        std::map<Point, SpatialRecord<T>, SimpleComparator> uniqueRecords;
-        
-        // Mantener versión más reciente de cada punto
-        for (const auto& record : results) {
-            auto it = uniqueRecords.find(record.point);
-            if (it == uniqueRecords.end()) {
-                uniqueRecords[record.point] = record;
-            }
-            // Si ya existe, mantener el más reciente (asumimos orden de búsqueda)
-        }
-        
-        // Reconstruir resultados sin tombstones
-        results.clear();
-        for (const auto& [point, record] : uniqueRecords) {
-            if (!record.isTombstone) {
-                results.push_back(record);
-            }
-        }
+        // TODO: Usar map para mantener versión única de cada punto
+        // Filtrar tombstones
+        // Reconstruir vector results sin duplicados ni tombstones
     }
     
     // Getters de métricas

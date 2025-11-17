@@ -50,14 +50,8 @@ public:
      * @brief Verifica si el MBR contiene un punto
      */
     bool contains(const Point& point) const {
-        if (point.dimensions() != dimensions()) return false;
-        
-        for (size_t i = 0; i < dimensions(); ++i) {
-            if (point[i] < lower[i] || point[i] > upper[i]) {
-                return false;
-            }
-        }
-        return true;
+        // TODO: Implementar verificación de contención
+        return false;
     }
     
     /**
@@ -65,86 +59,53 @@ public:
      * Usado para filtrado en búsquedas espaciales
      */
     bool intersects(const MBR& other) const {
-        if (dimensions() != other.dimensions()) return false;
-        
-        for (size_t i = 0; i < dimensions(); ++i) {
-            if (upper[i] < other.lower[i] || lower[i] > other.upper[i]) {
-                return false;
-            }
-        }
-        return true;
+        // TODO: Implementar verificación de intersección
+        return false;
     }
     
     /**
      * @brief Expande este MBR para incluir un punto
      */
     void expand(const Point& point) {
-        if (point.dimensions() != dimensions()) {
-            throw std::invalid_argument("Point must have same dimensions as MBR");
-        }
-        
-        for (size_t i = 0; i < dimensions(); ++i) {
-            lower[i] = std::min(lower[i], point[i]);
-            upper[i] = std::max(upper[i], point[i]);
-        }
+        // TODO: Implementar expansión para incluir punto
     }
     
     /**
      * @brief Expande este MBR para incluir otro MBR
      */
     void expand(const MBR& other) {
-        if (other.dimensions() != dimensions()) {
-            throw std::invalid_argument("MBR must have same dimensions");
-        }
-        
-        for (size_t i = 0; i < dimensions(); ++i) {
-            lower[i] = std::min(lower[i], other.lower[i]);
-            upper[i] = std::max(upper[i], other.upper[i]);
-        }
+        // TODO: Implementar expansión para incluir otro MBR
     }
     
     /**
      * @brief Calcula el área (volumen en D dimensiones)
      */
     double area() const {
-        if (dimensions() == 0) return 0.0;
-        
-        double result = 1.0;
-        for (size_t i = 0; i < dimensions(); ++i) {
-            result *= (upper[i] - lower[i]);
-        }
-        return result;
+        // TODO: Implementar cálculo de área/volumen
+        return 0.0;
     }
     
     /**
      * @brief Calcula el perímetro (margen en D dimensiones)
      */
     double perimeter() const {
-        double sum = 0.0;
-        for (size_t i = 0; i < dimensions(); ++i) {
-            sum += (upper[i] - lower[i]);
-        }
-        return sum;
+        // TODO: Implementar cálculo de perímetro/margen
+        return 0.0;
     }
     
     /**
      * @brief Calcula el centro del MBR
      */
     Point center() const {
-        Point c(dimensions());
-        for (size_t i = 0; i < dimensions(); ++i) {
-            c[i] = (lower[i] + upper[i]) / 2.0;
-        }
-        return c;
+        // TODO: Implementar cálculo del centro
+        return Point();
     }
     
     /**
      * @brief Verifica si el MBR es válido (no vacío)
      */
     bool isValid() const {
-        for (size_t i = 0; i < dimensions(); ++i) {
-            if (lower[i] > upper[i]) return false;
-        }
+        // TODO: Implementar verificación de validez
         return true;
     }
 };

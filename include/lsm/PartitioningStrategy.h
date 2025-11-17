@@ -51,48 +51,11 @@ public:
         size_t dimensions,
         size_t maxComponentSize) const override {
         
-        if (records.empty()) return {};
-        
-        // 1. Ordenar registros según comparador seleccionado
-        auto sortedRecords = records;
-        
-        if (comparatorType == SIMPLE) {
-            std::sort(sortedRecords.begin(), sortedRecords.end(),
-                [](const SpatialRecord<T>& a, const SpatialRecord<T>& b) {
-                    SimpleComparator cmp;
-                    return cmp(a, b);
-                });
-        } else {
-            // Para Hilbert, necesitamos el MBR de todos los datos
-            MBR bounds(dimensions);
-            for (const auto& rec : sortedRecords) {
-                bounds.expand(rec.point);
-            }
-            
-            std::sort(sortedRecords.begin(), sortedRecords.end(),
-                [&bounds](const SpatialRecord<T>& a, const SpatialRecord<T>& b) {
-                    HilbertCurveComparator cmp;
-                    return cmp(a, b, bounds);
-                });
-        }
-        
-        // 2. Particionar en chunks de tamaño maxComponentSize
-        std::vector<std::shared_ptr<LSMComponent<T>>> components;
-        
-        for (size_t i = 0; i < sortedRecords.size(); i += maxComponentSize) {
-            size_t end = std::min(i + maxComponentSize, sortedRecords.size());
-            
-            std::vector<SpatialRecord<T>> partition(
-                sortedRecords.begin() + i,
-                sortedRecords.begin() + end
-            );
-            
-            auto component = std::make_shared<LSMComponent<T>>(targetLevel, dimensions);
-            component->build(partition);
-            components.push_back(component);
-        }
-        
-        return components;
+        // TODO: Implementar Size Partitioning
+        // 1. Ordenar records (SimpleComparator o HilbertCurveComparator según comparatorType)
+        // 2. Particionar en chunks de maxComponentSize
+        // 3. Crear LSMComponent para cada chunk con build()
+        return {};
     }
 };
 
@@ -110,9 +73,9 @@ public:
         size_t dimensions,
         size_t maxComponentSize) const override {
         
-        if (records.empty()) return {};
-        
-        return strPartitionRecursive(records, targetLevel, dimensions, maxComponentSize, 0);
+        // TODO: Implementar STR partitioning
+        // Llamar strPartitionRecursive
+        return {};
     }
     
 private:
@@ -126,56 +89,13 @@ private:
         size_t maxComponentSize,
         size_t currentDim) const {
         
-        if (records.size() <= maxComponentSize) {
-            // Caso base: crear un solo componente
-            auto component = std::make_shared<LSMComponent<T>>(targetLevel, dimensions);
-            component->build(records);
-            return {component};
-        }
-        
-        // Calcular número de slices en esta dimensión
-        size_t numSlices = static_cast<size_t>(
-            std::ceil(std::pow(records.size() / static_cast<double>(maxComponentSize), 
-                              1.0 / dimensions))
-        );
-        
-        if (numSlices < 2) numSlices = 2;
-        
-        // Ordenar por dimensión actual
-        auto sortedRecords = records;
-        size_t dim = currentDim % dimensions;
-        
-        std::sort(sortedRecords.begin(), sortedRecords.end(),
-            [dim](const SpatialRecord<T>& a, const SpatialRecord<T>& b) {
-                return a.point[dim] < b.point[dim];
-            });
-        
-        // Dividir en slices
-        std::vector<std::shared_ptr<LSMComponent<T>>> allComponents;
-        size_t sliceSize = (sortedRecords.size() + numSlices - 1) / numSlices;
-        
-        for (size_t i = 0; i < numSlices; ++i) {
-            size_t start = i * sliceSize;
-            size_t end = std::min(start + sliceSize, sortedRecords.size());
-            
-            if (start >= sortedRecords.size()) break;
-            
-            std::vector<SpatialRecord<T>> slice(
-                sortedRecords.begin() + start,
-                sortedRecords.begin() + end
-            );
-            
-            // Recursión con siguiente dimensión
-            auto sliceComponents = strPartitionRecursive(
-                slice, targetLevel, dimensions, maxComponentSize, currentDim + 1
-            );
-            
-            allComponents.insert(allComponents.end(), 
-                               sliceComponents.begin(), 
-                               sliceComponents.end());
-        }
-        
-        return allComponents;
+        // TODO: Implementar STR recursivo
+        // 1. Caso base: si records <= maxComponentSize, crear un componente
+        // 2. Calcular numSlices = ceil((N/M)^(1/D))
+        // 3. Ordenar por dimensión actual
+        // 4. Dividir en slices
+        // 5. Recursión con siguiente dimensión para cada slice
+        return {};
     }
 };
 
@@ -199,22 +119,12 @@ public:
         size_t dimensions,
         size_t maxComponentSize) const override {
         
-        if (records.empty()) return {};
-        
-        if (records.size() <= maxComponentSize) {
-            auto component = std::make_shared<LSMComponent<T>>(targetLevel, dimensions);
-            component->build(records);
-            return {component};
-        }
-        
-        // Fase 1: Sampling - Seleccionar muestra representativa
-        auto sample = selectSample(records);
-        
-        // Fase 2: Boundary - Crear boundaries usando STR en la muestra
-        auto boundaries = computeBoundaries(sample, dimensions, maxComponentSize);
-        
-        // Fase 3: Final - Asignar todos los registros a componentes
-        return assignToComponents(records, boundaries, targetLevel, dimensions);
+        // TODO: Implementar R*-Grove 3-phase algorithm
+        // Caso base: si records <= maxComponentSize, crear 1 componente
+        // Fase 1: selectSample() - muestreo
+        // Fase 2: computeBoundaries() - calcular MBRs
+        // Fase 3: assignToComponents() - asignar records
+        return {};
     }
     
 private:
@@ -223,22 +133,8 @@ private:
      */
     std::vector<SpatialRecord<T>> selectSample(
         const std::vector<SpatialRecord<T>>& records) const {
-        
-        size_t sampleSize = static_cast<size_t>(records.size() * sampleRatio);
-        if (sampleSize < 100) sampleSize = std::min(size_t(100), records.size());
-        
-        std::vector<SpatialRecord<T>> sample;
-        sample.reserve(sampleSize);
-        
-        // Muestreo uniforme
-        size_t step = records.size() / sampleSize;
-        if (step == 0) step = 1;
-        
-        for (size_t i = 0; i < records.size() && sample.size() < sampleSize; i += step) {
-            sample.push_back(records[i]);
-        }
-        
-        return sample;
+        // TODO: Muestreo uniforme con sampleRatio
+        return {};
     }
     
     /**
@@ -248,64 +144,10 @@ private:
         const std::vector<SpatialRecord<T>>& sample,
         size_t dimensions,
         size_t maxComponentSize) const {
-        
-        std::vector<MBR> boundaries;
-        
-        if (sample.empty()) return boundaries;
-        
-        // Aplicar STR a la muestra para obtener MBRs representativos
-        size_t numPartitions = (sample.size() + maxComponentSize - 1) / maxComponentSize;
-        
-        // Para 2D, usar grid approach
-        if (dimensions == 2) {
-            size_t gridSize = static_cast<size_t>(std::ceil(std::sqrt(numPartitions)));
-            
-            // Calcular bounds totales
-            MBR totalBounds(dimensions);
-            for (const auto& rec : sample) {
-                totalBounds.expand(rec.point);
-            }
-            
-            // Crear grid de MBRs
-            double xStep = (totalBounds.getUpper()[0] - totalBounds.getLower()[0]) / gridSize;
-            double yStep = (totalBounds.getUpper()[1] - totalBounds.getLower()[1]) / gridSize;
-            
-            for (size_t i = 0; i < gridSize; ++i) {
-                for (size_t j = 0; j < gridSize; ++j) {
-                    Point lower(2);
-                    Point upper(2);
-                    
-                    lower[0] = totalBounds.getLower()[0] + i * xStep;
-                    lower[1] = totalBounds.getLower()[1] + j * yStep;
-                    upper[0] = totalBounds.getLower()[0] + (i + 1) * xStep;
-                    upper[1] = totalBounds.getLower()[1] + (j + 1) * yStep;
-                    
-                    boundaries.emplace_back(lower, upper);
-                }
-            }
-        } else {
-            // Para D > 2, usar particionamiento por dimensión principal
-            std::sort(const_cast<std::vector<SpatialRecord<T>>&>(sample).begin(), 
-                     const_cast<std::vector<SpatialRecord<T>>&>(sample).end(),
-                [](const SpatialRecord<T>& a, const SpatialRecord<T>& b) {
-                    SimpleComparator cmp;
-                    return cmp(a, b);
-                });
-            
-            size_t partSize = (sample.size() + numPartitions - 1) / numPartitions;
-            
-            for (size_t i = 0; i < sample.size(); i += partSize) {
-                size_t end = std::min(i + partSize, sample.size());
-                
-                MBR mbr(dimensions);
-                for (size_t j = i; j < end; ++j) {
-                    mbr.expand(sample[j].point);
-                }
-                boundaries.push_back(mbr);
-            }
-        }
-        
-        return boundaries;
+        // TODO: Computar MBRs boundaries
+        // Para 2D: crear grid (sqrt(numPartitions) x sqrt(numPartitions))
+        // Para D>2: usar particionamiento por dimensión
+        return {};
     }
     
     /**
@@ -316,43 +158,9 @@ private:
         const std::vector<MBR>& boundaries,
         size_t targetLevel,
         size_t dimensions) const {
-        
-        // Crear bins para cada boundary
-        std::vector<std::vector<SpatialRecord<T>>> bins(boundaries.size());
-        
-        for (const auto& record : records) {
-            // Encontrar mejor boundary (mínima expansión)
-            size_t bestIdx = 0;
-            double minExpansion = std::numeric_limits<double>::max();
-            
-            for (size_t i = 0; i < boundaries.size(); ++i) {
-                MBR expanded = boundaries[i];
-                double originalArea = expanded.area();
-                expanded.expand(record.point);
-                double newArea = expanded.area();
-                double expansion = newArea - originalArea;
-                
-                if (expansion < minExpansion) {
-                    minExpansion = expansion;
-                    bestIdx = i;
-                }
-            }
-            
-            bins[bestIdx].push_back(record);
-        }
-        
-        // Crear componentes de bins no vacíos
-        std::vector<std::shared_ptr<LSMComponent<T>>> components;
-        
-        for (auto& bin : bins) {
-            if (!bin.empty()) {
-                auto component = std::make_shared<LSMComponent<T>>(targetLevel, dimensions);
-                component->build(bin);
-                components.push_back(component);
-            }
-        }
-        
-        return components;
+        // TODO: Asignar cada record al boundary con mínima expansión
+        // Crear bins, construir componentes
+        return {};
     }
 };
 

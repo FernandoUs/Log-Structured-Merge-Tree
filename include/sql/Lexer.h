@@ -60,59 +60,28 @@ private:
     }
     
     void skipWhitespace() {
-        while (position < input.length() && std::isspace(peek())) {
-            advance();
-        }
+        // TODO: Avanzar position mientras peek() sea espacio en blanco
     }
     
     std::string readIdentifier() {
-        std::string result;
-        while (position < input.length() && 
-               (std::isalnum(peek()) || peek() == '_')) {
-            result += advance();
-        }
-        return result;
+        // TODO: Leer caracteres alfanuméricos + '_' para identificadores
+        return "";
     }
     
     std::string readNumber() {
-        std::string result;
-        while (position < input.length() && 
-               (std::isdigit(peek()) || peek() == '.')) {
-            result += advance();
-        }
-        return result;
+        // TODO: Leer dígitos + '.' para números
+        return "";
     }
     
     std::string readString() {
-        std::string result;
-        advance(); // Skip opening quote
-        while (position < input.length() && peek() != '\'') {
-            result += advance();
-        }
-        advance(); // Skip closing quote
-        return result;
+        // TODO: Leer desde ' hasta ' para strings
+        return "";
     }
     
     TokenType keywordOrIdentifier(const std::string& word) {
-        std::string upper = word;
-        std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
-        
-        if (upper == "SELECT") return TokenType::SELECT;
-        if (upper == "INSERT") return TokenType::INSERT;
-        if (upper == "INTO") return TokenType::INTO;
-        if (upper == "CREATE") return TokenType::CREATE;
-        if (upper == "TABLE") return TokenType::TABLE;
-        if (upper == "WHERE") return TokenType::WHERE;
-        if (upper == "FROM") return TokenType::FROM;
-        if (upper == "VALUES") return TokenType::VALUES;
-        if (upper == "COUNT") return TokenType::COUNT;
-        if (upper == "INT") return TokenType::INT;
-        if (upper == "DOUBLE") return TokenType::DOUBLE;
-        if (upper == "VARCHAR") return TokenType::VARCHAR;
-        if (upper == "POINT") return TokenType::POINT;
-        if (upper == "GEOMETRY") return TokenType::GEOMETRY;
-        if (upper == "SPATIAL_INTERSECT") return TokenType::SPATIAL_INTERSECT;
-        
+        // TODO: Convertir word a uppercase, mapear a TokenType
+        // SELECT, INSERT, CREATE, etc. -> keywords
+        // Otros -> IDENTIFIER
         return TokenType::IDENTIFIER;
     }
     
@@ -120,68 +89,19 @@ public:
     explicit SQLLexer(const std::string& sql) : input(sql), position(0) {}
     
     Token nextToken() {
-        skipWhitespace();
-        
-        if (position >= input.length()) {
-            return Token(TokenType::END_OF_FILE);
-        }
-        
-        char current = peek();
-        
-        // Símbolos especiales
-        if (current == '*') {
-            advance();
-            return Token(TokenType::STAR, "*");
-        }
-        if (current == ',') {
-            advance();
-            return Token(TokenType::COMMA, ",");
-        }
-        if (current == ';') {
-            advance();
-            return Token(TokenType::SEMICOLON, ";");
-        }
-        if (current == '(') {
-            advance();
-            return Token(TokenType::LPAREN, "(");
-        }
-        if (current == ')') {
-            advance();
-            return Token(TokenType::RPAREN, ")");
-        }
-        
-        // Strings
-        if (current == '\'') {
-            std::string str = readString();
-            return Token(TokenType::STRING, str);
-        }
-        
-        // Numbers
-        if (std::isdigit(current)) {
-            std::string num = readNumber();
-            return Token(TokenType::NUMBER, num);
-        }
-        
-        // Identifiers and keywords
-        if (std::isalpha(current) || current == '_') {
-            std::string word = readIdentifier();
-            TokenType type = keywordOrIdentifier(word);
-            return Token(type, word);
-        }
-        
-        advance();
-        return Token(TokenType::INVALID, std::string(1, current));
+        // TODO: Implementar tokenización
+        // 1. skipWhitespace()
+        // 2. Verificar EOF
+        // 3. Reconocer símbolos: *, ,, ;, (, )
+        // 4. Reconocer strings: '...'
+        // 5. Reconocer números
+        // 6. Reconocer identificadores/keywords
+        return Token(TokenType::INVALID);
     }
     
     std::vector<Token> tokenize() {
-        std::vector<Token> tokens;
-        Token tok = nextToken();
-        while (tok.type != TokenType::END_OF_FILE) {
-            tokens.push_back(tok);
-            tok = nextToken();
-        }
-        tokens.push_back(tok); // Add EOF
-        return tokens;
+        // TODO: Llamar nextToken() hasta END_OF_FILE
+        return {};
     }
 };
 
